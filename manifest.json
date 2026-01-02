@@ -1,0 +1,54 @@
+{
+  "manifest_version": 3,
+  "name": "Claude Code Browser Extension",
+  "version": "1.0.0",
+  "description": "Enable Claude Code to control your browser",
+  "icons": {
+    "128": "icons/icon-128.png"
+  },
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "permissions": [
+    "nativeMessaging",
+    "tabs",
+    "tabGroups",
+    "activeTab",
+    "scripting",
+    "debugger",
+    "storage",
+    "offscreen",
+    "downloads",
+    "webNavigation",
+    "system.display",
+    "notifications"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "content_scripts": [
+    {
+      "js": ["content-scripts/accessibility-tree.js"],
+      "matches": ["<all_urls>"],
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "js": ["content-scripts/visual-indicator.js"],
+      "matches": ["<all_urls>"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "commands": {
+    "toggle-side-panel": {
+      "suggested_key": {
+        "default": "Ctrl+E",
+        "mac": "Command+E"
+      },
+      "description": "Toggle Claude panel"
+    }
+  }
+}

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Code Extension Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-content">
+        <img src="icons/icon-128.png" alt="Claude" class="logo" width="32" height="32">
+        <h1>Claude Code Extension Settings</h1>
+      </div>
+      <div class="connection-status" id="connectionStatus">
+        <span class="status-dot"></span>
+        <span class="status-text">Checking...</span>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="permissions">Permissions</button>
+      <button class="tab" data-tab="general">General</button>
+      <button class="tab" data-tab="notifications">Notifications</button>
+      <button class="tab" data-tab="about">About</button>
+    </nav>
+
+    <main>
+      <!-- Permissions Tab -->
+      <section class="tab-content active" id="permissions">
+        <div class="section">
+          <h2>Allowed Domains</h2>
+          <p class="description">Domains where automation is allowed. Use wildcards like *.example.com</p>
+
+          <div class="domain-input-group">
+            <input type="text" id="newAllowedDomain" placeholder="e.g., github.com or *.google.com">
+            <button id="addAllowedDomain" class="btn btn-primary">Add</button>
+          </div>
+
+          <ul class="domain-list" id="allowedDomainsList">
+            <!-- Populated by JS -->
+          </ul>
+
+          <p class="info-note">If this list is empty, all domains are allowed (except blocked ones).</p>
+        </div>
+
+        <div class="section">
+          <h2>Blocked Domains</h2>
+          <p class="description">Domains where automation is never allowed</p>
+
+          <div class="domain-input-group">
+            <input type="text" id="newBlockedDomain" placeholder="e.g., bank.com">
+            <button id="addBlockedDomain" class="btn btn-secondary">Add</button>
+          </div>
+
+          <ul class="domain-list blocked" id="blockedDomainsList">
+            <!-- Populated by JS -->
+          </ul>
+        </div>
+      </section>
+
+      <!-- General Settings Tab -->
+      <section class="tab-content" id="general">
+        <div class="section">
+          <h2>Action Confirmations</h2>
+          <p class="description">Choose which actions require your approval before execution</p>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <label for="requireApprovalClicks">Clicks require confirmation</label>
+              <p class="setting-description">Ask before every click action</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="requireApprovalClicks">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <label for="requireApprovalForms">Form input requires confirmation</label>
+              <p class="setting-description">Ask before filling in form fields</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="requireApprovalForms" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <label for="requireApprovalDownloads">Downloads require confirmation</label>
+              <p class="setting-description">Ask before downloading files</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="requireApprovalDownloads" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <label for="requireApprovalNavigation">Navigation requires confirmation</label>
+              <p class="setting-description">Ask before navigating to new pages</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="requireApprovalNavigation">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <label for="autoApproveSameDomain">Auto-approve same domain navigation</label>
+              <p class="setting-description">Skip confirmation for navigation within the same domain</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="autoApproveSameDomain" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Visual Indicator</h2>
+          <p class="description">Show a visual border when Claude is controlling the browser</p>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <label for="showVisualIndicator">Show visual indicator</label>
+              <p class="setting-description">Display a colored border around the page during automation</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="showVisualIndicator" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <label for="indicatorColor">Indicator color</label>
+              <p class="setting-description">Color of the visual indicator border</p>
+            </div>
+            <input type="color" id="indicatorColor" value="#FF6B35">
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Tab Group</h2>
+          <p class="description">Configure the browser tab group used for automation</p>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <label for="tabGroupName">Group name</label>
+              <p class="setting-description">Name displayed on the tab group</p>
+            </div>
+            <input type="text" id="tabGroupName" value="Facai" class="text-input">
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <label for="tabGroupColor">Group color</label>
+              <p class="setting-description">Color of the tab group</p>
+            </div>
+            <select id="tabGroupColor" class="select-input">
+              <option value="grey">Grey</option>
+              <option value="blue">Blue</option>
+              <option value="red">Red</option>
+              <option value="yellow">Yellow</option>
+              <option value="green">Green</option>
+              <option value="pink">Pink</option>
+              <option value="purple">Purple</option>
+              <option value="cyan">Cyan</option>
+              <option value="orange" selected>Orange</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Notifications Tab -->
+      <section class="tab-content" id="notifications">
+        <div class="section">
+          <h2>Desktop Notifications</h2>
+          <p class="description">Configure when to show desktop notifications</p>
+
+          <div class="setting-item">
+            <div class="setting-info">
+              <label for="notificationsEnabled">Enable notifications</label>
+              <p class="setting-description">Show desktop notifications for important events</p>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="notificationsEnabled" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- About Tab -->
+      <section class="tab-content" id="about">
+        <div class="section">
+          <h2>Extension Info</h2>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Version</span>
+              <span class="info-value" id="extensionVersion">1.0.0</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Extension ID</span>
+              <span class="info-value" id="extensionId">-</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Native Host</span>
+              <span class="info-value" id="nativeHostStatus">Checking...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Data Management</h2>
+          <p class="description">Manage extension data and settings</p>
+
+          <div class="button-group">
+            <button id="exportData" class="btn btn-secondary">Export Settings</button>
+            <button id="importData" class="btn btn-secondary">Import Settings</button>
+          </div>
+
+          <div class="button-group danger-zone">
+            <button id="resetSettings" class="btn btn-warning">Reset to Defaults</button>
+            <button id="clearAllData" class="btn btn-danger">Clear All Data</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Setup Instructions</h2>
+          <div class="setup-steps">
+            <ol>
+              <li>Copy your Extension ID from above</li>
+              <li>Run the Native Host installer:
+                <code>./scripts/install-native-host.sh &lt;extension-id&gt;</code>
+              </li>
+              <li>Restart Chrome</li>
+              <li>Start Claude Code CLI</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Claude Code Browser Extension</p>
+    </footer>
+  </div>
+
+  <input type="file" id="importFileInput" accept=".json" style="display: none;">
+  <script src="lib/permissions.js" type="module"></script>
+  <script src="options.js" type="module"></script>
+</body>
+</html>
