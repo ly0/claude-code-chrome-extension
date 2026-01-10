@@ -12,7 +12,7 @@ An open-source Chrome extension that enables browser automation from Claude Code
 - **GIF Recording** - Record browser automation sessions
 - **Debug Tools** - Console message and network request monitoring
 
-## Installation
+## Quick Start
 
 ### Step 1: Load the Extension
 
@@ -20,36 +20,67 @@ An open-source Chrome extension that enables browser automation from Claude Code
 2. Enable **Developer mode** (toggle in top-right corner)
 3. Click **Load unpacked**
 4. Select the `ccext` folder
-5. Copy the **Extension ID** (e.g., `abcdefghijklmnopqrstuvwxyz123456`)
+5. **Copy the Extension ID** (32 lowercase letters, e.g., `cbakplgmjcmedeaiomeiapkhobkhgjhc`)
 
-### Step 2: Run Install Script
+### Step 2: Patch Claude Code CLI
+
+Run the patch script to configure the CLI for ccext:
 
 ```bash
-./scripts/install-native-host.sh <your-extension-id>
+cd ccext
+./scripts/patch-cli.sh <your-extension-id>
 ```
 
-This script adds your extension ID to the Native Host configuration.
+Example:
+```bash
+./scripts/patch-cli.sh cbakplgmjcmedeaiomeiapkhobkhgjhc
+```
 
-### Step 3: Patch Claude Code CLI
+The script will:
+- Auto-detect your Claude CLI installation
+- Create a backup of cli.js
+- Add your extension ID to allowed_origins
+- Add your extension ID to detection array
+- Create Chrome extension directory symlink
 
-**This step is required** because Claude Code CLI overwrites the Native Host config on startup, removing third-party extension IDs.
+### Step 3: Restart Everything
+
+1. **Quit Chrome completely** (ensure no background processes)
+2. **Restart Chrome**
+3. **Start Claude Code** with browser support:
+   ```bash
+   claude --chrome
+   ```
+
+## Verification
+
+After setup, verify the connection:
+
+1. Open Chrome DevTools → Application → Service Workers
+2. Look for the ccext service worker
+3. Check console for: `[SW] Native host connection verified`
+
+In Claude CLI:
+```bash
+claude --chrome
+> Open Twitter and summarize what's new
+```
+
+If browser tools work, setup is complete!
 
 ---
 
-## CLI Patching Guide
+## Manual CLI Patching (Alternative)
 
-### The Problem
-
-When Claude Code CLI starts, it writes the Native Host configuration file with only the official extension ID in `allowed_origins`. This prevents third-party extensions like ccext from connecting.
+If the automatic patch script doesn't work, you can patch manually.
 
 ### Finding cli.js
 
 ```bash
-# Find Claude Code CLI location
+# Find Claude command location
 which claude
 
-# Follow the symlink to find the actual installation
-# cli.js is usually in the same directory
+# Follow symlink to find cli.js
 ls -la $(dirname $(readlink -f $(which claude)))
 ```
 
@@ -57,105 +88,55 @@ Common locations:
 - `~/.claude/local/cli.js`
 - `~/.nvm/versions/node/*/lib/node_modules/@anthropic-ai/claude-code/cli.js`
 
-### Finding the Patch Location
+### Patch 1: allowed_origins
 
-Since cli.js is minified and function names are obfuscated (they change between versions), search using these **stable keywords**:
-
+Search for the Native Host config:
 ```bash
-# Search for the Native Host config location
 grep -n "Claude Code Browser Extension Native Host" /path/to/cli.js
 ```
 
-This will show you the line number where the config object is defined.
+Find the `allowed_origins` array and add your extension ID:
 
-### What You'll Find (BEFORE Patch)
-
-Look for a pattern like this (variable names will differ):
-
+**Before:**
 ```javascript
-G = {
-    name: SOME_VAR,
-    description: "Claude Code Browser Extension Native Host",
-    path: A,
-    type: "stdio",
-    allowed_origins: ["chrome-extension://fcoeoabgfenejglbffodgkkbkcdhcgfn/"]
-},
+allowed_origins: ["chrome-extension://fcoeoabgfenejglbffodgkkbkcdhcgfn/"]
 ```
 
-### How to Patch (AFTER)
-
-Add code to read and merge existing origins:
-
+**After:**
 ```javascript
-// Add these lines BEFORE the config object definition:
-existingOrigins = [];
-try {
-    let existingConfig = JSON.parse(await READ_FILE_FUNC(CONFIG_PATH_VAR, "utf-8"));
-    existingOrigins = existingConfig.allowed_origins || [];
-} catch {}
-let mergedOrigins = [...new Set(["chrome-extension://fcoeoabgfenejglbffodgkkbkcdhcgfn/", ...existingOrigins])],
-
-// Modify the config object to use mergedOrigins:
-G = {
-    name: SOME_VAR,
-    description: "Claude Code Browser Extension Native Host",
-    path: A,
-    type: "stdio",
-    allowed_origins: mergedOrigins  // Changed from hardcoded array
-},
+allowed_origins: ["chrome-extension://fcoeoabgfenejglbffodgkkbkcdhcgfn/", "chrome-extension://YOUR_ID_HERE/"]
 ```
 
-### Finding Function and Variable Names
+### Patch 2: Extension Detection
 
-To identify the correct names in your version:
-
-1. **`READ_FILE_FUNC`** - Search for `"utf-8"` near file reading operations. Common names: `ee2`, `readFile`, `fs.readFile`
-
-2. **`CONFIG_PATH_VAR`** - This is the variable defined right before the config object (usually `B` or similar). It contains the path to the Native Host config file.
-
-### Example (Actual Patched Code)
-
-Here's a real example from one version:
-
-```javascript
-async function re2(A) {
-    let Q = p07();
-    if (!Q) throw Error("Claude in Chrome Native Host not supported on this platform");
-    let B = x$(Q, d07),
-        existingOrigins = [];
-    try {
-        let existingConfig = JSON.parse(await ee2(B, "utf-8"));
-        existingOrigins = existingConfig.allowed_origins || [];
-    } catch {}
-    let mergedOrigins = [...new Set(["chrome-extension://fcoeoabgfenejglbffodgkkbkcdhcgfn/", ...existingOrigins])],
-        G = {
-            name: JV1,
-            description: "Claude Code Browser Extension Native Host",
-            path: A,
-            type: "stdio",
-            allowed_origins: mergedOrigins
-        },
-    // ... rest of function
-}
-```
-
-### Verification
-
-After patching, restart Claude Code CLI and verify:
-
-**macOS:**
+Search for extension detection:
 ```bash
-cat ~/Library/Application\ Support/Google/Chrome/NativeMessagingHosts/com.anthropic.claude_code_browser_extension.json
+grep -n "Extension not found in any profile" /path/to/cli.js
 ```
 
-**Linux:**
+Find the array above this line (contains 32-letter IDs) and add your ID:
+
+**Before:**
+```javascript
+let G = ["fcoeoabgfenejglbffodgkkbkcdhcgfn"];
+```
+
+**After:**
+```javascript
+let G = ["fcoeoabgfenejglbffodgkkbkcdhcgfn", "YOUR_ID_HERE"];
+```
+
+### Patch 3: Chrome Extension Directory
+
+Create a symlink in Chrome's Extensions directory:
+
 ```bash
-cat ~/.config/google-chrome/NativeMessagingHosts/com.anthropic.claude_code_browser_extension.json
-```
+# Find your Chrome profile's Extensions directory
+CHROME_EXT_DIR="$HOME/Library/Application Support/Google/Chrome/Default/Extensions"
 
-The `allowed_origins` array should contain both:
-- `chrome-extension://fcoeoabgfenejglbffodgkkbkcdhcgfn/` (official)
-- `chrome-extension://<your-ccext-id>/` (your extension)
+# Create symlink pointing to ccext source
+ln -s /path/to/ccext "$CHROME_EXT_DIR/YOUR_EXTENSION_ID"
+```
 
 ---
 
@@ -178,26 +159,95 @@ Open the extension options page (right-click extension icon → Options):
 
 ## Troubleshooting
 
-### "Not Connected" in Settings
+### "Chrome extension not connected" Error
 
-1. Check if Native Host config exists and contains your extension ID
-2. Verify Claude Code CLI is running
-3. Try reloading the extension
+This usually means the communication chain is broken. Check each component:
 
-### "No such tool available" Error
+1. **Check Native Host config contains your ID:**
+   ```bash
+   # macOS
+   cat ~/Library/Application\ Support/Google/Chrome/NativeMessagingHosts/com.anthropic.claude_code_browser_extension.json
+
+   # Linux
+   cat ~/.config/google-chrome/NativeMessagingHosts/com.anthropic.claude_code_browser_extension.json
+   ```
+
+2. **Verify no conflicting processes:**
+   ```bash
+   ps aux | grep claude-in-chrome-mcp
+   ps aux | grep chrome-native-host
+   ```
+   Kill any stale processes:
+   ```bash
+   pkill -f "claude-in-chrome-mcp"
+   pkill -f "chrome-native-host"
+   ```
+
+3. **Check socket exists:**
+   ```bash
+   ls -la $(node -e "console.log(require('os').tmpdir() + '/claude-mcp-browser-bridge-' + require('os').userInfo().username)")
+   ```
+
+4. **Restart everything:**
+   - Quit Chrome completely
+   - Kill all Claude processes
+   - Restart Chrome
+   - Run `claude --chrome`
+
+### "Not Connected" in Extension Settings
 
 1. Reload the extension in `chrome://extensions`
-2. Restart Claude Code CLI
-3. Check the extension's Service Worker console for errors
+2. Verify Claude Code CLI is running with `--chrome` flag
+3. Check the Service Worker console for errors
 
 ### Extension Not Detected by CLI
 
-Run the install script again:
+Re-run the patch script:
 ```bash
-./scripts/install-native-host.sh <your-extension-id>
+./scripts/patch-cli.sh <your-extension-id>
 ```
 
-Then restart Chrome completely (quit all instances) and restart Claude Code CLI.
+Then restart Chrome and CLI.
+
+### Browser Tools Timeout
+
+If tools timeout or don't respond:
+
+1. The Chrome Service Worker may have been suspended
+2. Try reloading the extension
+3. Make sure the extension's Service Worker is active (check in DevTools)
+
+---
+
+## Architecture
+
+Understanding the communication flow helps with debugging:
+
+```
+Claude Code CLI
+    │
+    ├─► spawns MCP server subprocess (--claude-in-chrome-mcp)
+    │         │
+    │         └─► connects via Unix socket
+    │                    │
+    ▼                    ▼
+Native Host ◄──── Socket Server
+    │
+    └─► Chrome Native Messaging (stdin/stdout)
+               │
+               ▼
+    Extension Service Worker
+               │
+               └─► Executes browser tools
+               │
+               └─► Returns results
+```
+
+Key points:
+- MCP server and Native Host share a Unix socket
+- Native Host is spawned by Chrome when extension connects
+- If Service Worker sleeps, Native Host exits and socket is deleted
+- All components must be running simultaneously
 
 ---
 

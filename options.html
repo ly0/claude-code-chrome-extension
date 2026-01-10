@@ -215,6 +215,12 @@
               <span class="info-label">Native Host</span>
               <span class="info-value" id="nativeHostStatus">Checking...</span>
             </div>
+            <div class="info-item">
+              <span class="info-label">Source Code</span>
+              <span class="info-value">
+                <a href="https://github.com/ly0/claude-code-chrome-extension" target="_blank">GitHub</a>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -238,11 +244,11 @@
           <div class="setup-steps">
             <ol>
               <li>Copy your Extension ID from above</li>
-              <li>Run the Native Host installer:
-                <code>./scripts/install-native-host.sh &lt;extension-id&gt;</code>
+              <li>Run the patch script:
+                <code>cd ccext && ./scripts/patch-cli.sh &lt;extension-id&gt;</code>
               </li>
-              <li>Restart Chrome</li>
-              <li>Start Claude Code CLI</li>
+              <li>Restart Chrome completely</li>
+              <li>Start Claude Code CLI: <code>claude --chrome</code></li>
             </ol>
           </div>
         </div>
